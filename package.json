@@ -1,0 +1,13 @@
+{
+    "name": "com.shniqq.terrain-generation",
+    "version": "1.0.0-preview.1",
+    "description": "Procedural Terrain Generation.",
+    "author": "Ruben Ohnmacht",
+    "license": "MIT",
+    "displayName": "Terrain Generation",
+    "unity": "2020.3",
+    "type": "tool",
+    "dependencies": {
+        "com.dbrizov.naughtyattributes": "2.0.8"
+    }
+}
