@@ -31,6 +31,8 @@ namespace TerrainGeneration
         [SerializeField] private ushort _seed;
         [SerializeField] private bool _randomizeSeed;
 
+        public float CurrentProgress { get; private set; }
+
         public Terrain LastGeneratedTerrain { get; private set; }
 
         private bool ValidateDetailResolutionPerPatch(int detailResolutionPerPatch)
@@ -56,12 +58,69 @@ namespace TerrainGeneration
         public IEnumerator GenerateTerrainAsync(Action onComplete)
         {
             GenerateTerrainProfilerMarker.Begin(this);
+            CurrentProgress = 0f;
             LastGeneratedTerrain = null;
             if (_randomizeSeed)
             {
                 _seed = (ushort) Random.Range(0, ushort.MaxValue);
             }
 
+            var terrainData = GenerateTerrainHeight();
+            var terrain = GetTerrain(terrainData);
+
+            _terrainGenerationPreset.ApplyTerrainLayers(terrainData);
+            SetTerrainData(terrain, terrainData);
+            yield return Step(0.1f);
+
+            yield return _terrainGenerationPreset.ApplyTrees(terrainData, () => SetTerrainData(terrain, terrainData));
+
+            yield return Step(0.25f);
+
+            yield return _terrainGenerationPreset
+                .ApplyGenericTerrainModifiers(terrainData, terrain, () => SetTerrainData(terrain, terrainData));
+
+            yield return Step(0.5f);
+
+            yield return _terrainGenerationPreset
+                .ApplyDetailsTerrainModifiers(terrainData, terrain, () => SetTerrainData(terrain, terrainData));
+
+            yield return Step(0.75f);
+
+            terrain.name = $"[{nameof(TerrainGenerator)}] Terrain: {_seed}";
+            CurrentProgress = 1f;
+            LastGeneratedTerrain = terrain;
+            onComplete?.Invoke();
+            GenerateTerrainProfilerMarker.End();
+            yield return null;
+        }
+
+        private object Step(float progress)
+        {
+            CurrentProgress = progress;
+            return new WaitForEndOfFrame();
+        }
+
+        private Terrain GetTerrain(TerrainData terrainData)
+        {
+            var terrain = Terrain.activeTerrain;
+            if (terrain == null)
+            {
+                terrain = Terrain.CreateTerrainGameObject(terrainData).GetComponent<Terrain>();
+                SceneManager.MoveGameObjectToScene(terrain.gameObject, gameObject.scene);
+            }
+
+            foreach (Transform child in terrain.transform)
+            {
+                child.gameObject.SetActive(false);
+            }
+
+            terrain.materialTemplate = _terrainMaterial;
+
+            return terrain;
+        }
+
+        private TerrainData GenerateTerrainHeight()
+        {
             _heightmap = _terrainGenerationPreset.GenerateHeightmap(_seed, _heightmapResolution);
 
             var terrainData = new TerrainData().SetTerrainSize(_size, _heightmapResolution);
@@ -79,44 +138,7 @@ namespace TerrainGeneration
             }
 
             terrainData.SetHeights(0, 0, height);
-
-            var terrain = Terrain.activeTerrain;
-            if (terrain == null)
-            {
-                terrain = Terrain.CreateTerrainGameObject(terrainData).GetComponent<Terrain>();
-                SceneManager.MoveGameObjectToScene(terrain.gameObject, gameObject.scene);
-            }
-
-            foreach (Transform child in terrain.transform)
-            {
-                child.gameObject.SetActive(false);
-            }
-
-            terrain.materialTemplate = _terrainMaterial;
-            _terrainGenerationPreset.ApplyTerrainLayers(terrainData);
-            SetTerrainData(terrain, terrainData);
-            yield return new WaitForEndOfFrame();
-
-            yield return _terrainGenerationPreset.ApplyTrees(terrainData, () => SetTerrainData(terrain, terrainData));
-
-            yield return new WaitForEndOfFrame();
-
-            yield return _terrainGenerationPreset
-                .ApplyGenericTerrainModifiers(terrainData, terrain, () => SetTerrainData(terrain, terrainData));
-
-            yield return new WaitForEndOfFrame();
-
-            yield return _terrainGenerationPreset
-                .ApplyDetailsTerrainModifiers(terrainData, terrain, () => SetTerrainData(terrain, terrainData));
-
-            yield return new WaitForEndOfFrame();
-
-            terrain.name = $"[{nameof(TerrainGenerator)}] Terrain: {_seed}";
-            GenerateTerrainProfilerMarker.End();
-            yield return null;
-
-            LastGeneratedTerrain = terrain;
-            onComplete?.Invoke();
+            return terrainData;
         }
 
         private static void SetTerrainData(Terrain terrain, TerrainData terrainData)
