@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using NaughtyAttributes;
 using TerrainGeneration.Modifiers.Details;
 using TerrainGeneration.Modifiers.Generic;
@@ -31,23 +30,23 @@ namespace TerrainGeneration
             new ProfilerMarker(nameof(ApplyDetailsTerrainModifiers));
 
         [SerializeReference, SerializeReferenceButton, AllowNesting]
-        public List<ITextureModifier> _textureModifiers;
+        internal List<ITextureModifier> _textureModifiers;
         [SerializeReference, SerializeReferenceButton, AllowNesting]
-        private List<ILayerModifier> _terrainLayersModifiers;
+        internal List<ILayerModifier> _terrainLayersModifiers;
         [SerializeReference, SerializeReferenceButton, AllowNesting]
-        private List<ITreeModifier> _terrainTreeModifiers;
+        internal List<ITreeModifier> _terrainTreeModifiers;
         [SerializeReference, SerializeReferenceButton, AllowNesting]
-        private List<IGenericTerrainModifier> _genericTerrainModifiers;
+        internal List<IDetailsModifier> _detailsModifiers;
         [SerializeReference, SerializeReferenceButton, AllowNesting]
-        private List<IDetailsModifier> _detailsModifiers;
+        internal List<IGenericTerrainModifier> _genericTerrainModifiers;
 
         [SerializeField] private ushort _seed;
         [SerializeField] private bool _randomizeSeed;
 
         [ShowAssetPreview, SerializeField, ShowIf(nameof(HasPreview))]
-        private Texture2D _preview;
+        internal Texture2D _preview;
 
-        private bool HasPreview => _preview != null;
+        internal bool HasPreview => _preview != null;
 
         public Texture2D GenerateHeightmap(ushort seed, int size)
         {
@@ -120,8 +119,8 @@ namespace TerrainGeneration
             DetailsModifiersProfilerMarker.End();
         }
 
-        [Button]
-        public void GeneratePreview()
+        [Button(enabledMode: EButtonEnableMode.Editor)]
+        public void GenerateHeightmapPreview()
         {
             var seed = _randomizeSeed ? (ushort) Random.Range(0, ushort.MaxValue) : _seed;
             GenerateHeightmap(seed, 513);

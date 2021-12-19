@@ -1,0 +1,19 @@
+{
+    "name": "TerrainGeneration.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:8d4ada6e7611c4c12baf517798033980",
+        "GUID:c6021f9eddd664f70aa2ead274a9626d"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
